@@ -105,3 +105,57 @@ CREATE TRIGGER sycn_with_auth
   FOR EACH ROW
   EXECUTE FUNCTION public.sync();
 ```
+
+---
+---
+# 3. to CREATE RLS POLICY
+```sql
+CREATE POLICY "Enable users to view their own data only"
+ON "public"."task_progress"
+AS PERMISSIVE
+FOR SELECT
+TO authenticated
+USING (
+  (SELECT auth.uid()) = user_id
+);
+```
+
+---
+---
+# 4. 用户信息查询（移动端，Python代码，需要提前`pip install supabase`）
+```python
+from supabase import create_client, Client
+
+url: str = "MY_URL"
+key: str = "MY_ANON_KEY"
+supabase: Client = create_client(url, key)
+
+# 登录（否则 auth.uid() 为空）
+supabase.auth.sign_in_with_password({
+    "email": "user@example.com",
+    "password": "password"
+})
+
+# 查询 只返回当前登录用户的数据
+data = supabase.from_("table").select("*").execute()
+
+print(data)
+```
+
+---
+---
+# 5. 用Python实现CRUD
+```python
+'''初始化'''
+from supabase import create_client, Client
+
+# 配置信息
+SUPABASE_URL = "MY_PROJECT_URL"
+SUPABASE_SERVICE_KEY = "MY_SERVICE_ROLE_KEY" 
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+# 定义表名，方便后面统一修改
+TABLE_NAME = "task_progress"
+```
+> 详见[supabase官方文档](https://supabase.com/docs/reference/python/introduction)  
+> 后端、Modal、移动端需自适应。
